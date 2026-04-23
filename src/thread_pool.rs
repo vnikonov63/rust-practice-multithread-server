@@ -7,7 +7,6 @@ pub struct ThreadPool {
     workers: Vec<Worker>,
     sender: Option<mpsc::Sender<Job>>,
 }
-
 impl ThreadPool {
     /// Create a Thread new pool
     ///
@@ -30,7 +29,10 @@ impl ThreadPool {
             workers.push(Worker::new(id, Arc::clone(&receiver)));
         }
 
-        ThreadPool { workers, sender: Some(sender) }
+        ThreadPool {
+            workers,
+            sender: Some(sender),
+        }
     }
 
     pub fn execute<F>(&self, f: F)
@@ -73,7 +75,7 @@ impl Worker {
                         println!("Worker {id} got a job; executing...");
                         job();
                     }
-                    Err(err) => {
+                    Err(_) => {
                         println!("worker {id} disconnected; shutting down.");
                         break;
                     }

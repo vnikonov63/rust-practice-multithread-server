@@ -1,4 +1,3 @@
-use _21_multi_thread_server::thread_pool::ThreadPool;
 use std::{
     fs,
     io::{BufReader, prelude::*},
@@ -6,6 +5,25 @@ use std::{
     thread,
     time::Duration,
 };
+
+use clap::{Parser, Subcommand, value_parser};
+use _21_multi_thread_server::thread_pool::ThreadPool;
+
+#[derive(Parser, Debug)]
+#[command(version, about)]
+struct Args {
+    #[command(subcommand)]
+    command: Option<Command>,
+}
+
+#[derive(Subcommand, Debug)]
+enum Command {
+    SpawnInfiniteThreads,
+    ThreadPool {
+        // TODO: learn how to limit the size argument here, it should be larger than 50
+        size: usize,
+    },
+}
 
 /* Using a separate thread for every stream - prone to attacks */
 /* fn main() {
@@ -20,16 +38,53 @@ use std::{
     }
 } */
 
-fn main() {
-    let listener = TcpListener::bind("127.0.0.1:7878").unwrap();
-    let pool = ThreadPool::new(4);
+// fn main() {
+//     let listener = TcpListener::bind("127.0.0.1:7878").unwrap();
+//     let pool = ThreadPool::new(4);
+//
+//     for stream in listener.incoming().take(2) {
+//         let stream = stream.unwrap();
+//         pool.execute(|| {
+//             handle_connection(stream);
+//         })
+//     }
+// }
 
-    for stream in listener.incoming().take(2) {
-        let stream = stream.unwrap();
-        pool.execute(|| {
-            handle_connection(stream);
-        })
+fn main() {
+    let args = Args::parse();
+
+    let listener = TcpListener::bind("127.0.0.1:7878").unwrap();
+
+    match args.command {
+        Some(Command::SpawnInfiniteThreads) | None => {
+            infinite_thread_generation(listener);
+        }
+        Some(Command::ThreadPool { size }) => {
+            thread_pool(listener, size);
+        }
     }
+}
+
+fn infinite_thread_generation(listener: TcpListener) {
+    for stream in listener.incoming() {
+        let stream = stream.unwrap();
+
+        let _ = thread::spawn(|| {
+            handle_connection(stream);
+        });
+    }
+}
+
+
+fn thread_pool(listener: TcpListener, pool_size: usize) {
+        let pool = ThreadPool::new(pool_size);
+
+        for stream in listener.incoming().take(2) {
+            let stream = stream.unwrap();
+            pool.execute(|| {
+                handle_connection(stream);
+            })
+        }
 }
 
 fn handle_connection(mut stream: TcpStream) {
