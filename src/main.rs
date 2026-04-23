@@ -6,7 +6,7 @@ use std::{
     time::Duration,
 };
 
-use clap::{Parser, Subcommand, value_parser};
+use clap::{Parser, Subcommand};
 use _21_multi_thread_server::thread_pool::ThreadPool;
 
 #[derive(Parser, Debug)]
@@ -18,37 +18,15 @@ struct Args {
 
 #[derive(Subcommand, Debug)]
 enum Command {
+    /// Spawn unbounded threads (default behavior)
     SpawnInfiniteThreads,
+    /// Run using a fixed-size thread pool
     ThreadPool {
         // TODO: learn how to limit the size argument here, it should be larger than 50
+        /// Number of threads in the pool
         size: usize,
     },
 }
-
-/* Using a separate thread for every stream - prone to attacks */
-/* fn main() {
-    let listener = TcpListener::bind("127.0.0.1:7878").unwrap();
-
-    for stream in listener.incoming() {
-        let stream = stream.unwrap();
-
-        let _ = thread::spawn(|| {
-            handle_connection(stream);
-        });
-    }
-} */
-
-// fn main() {
-//     let listener = TcpListener::bind("127.0.0.1:7878").unwrap();
-//     let pool = ThreadPool::new(4);
-//
-//     for stream in listener.incoming().take(2) {
-//         let stream = stream.unwrap();
-//         pool.execute(|| {
-//             handle_connection(stream);
-//         })
-//     }
-// }
 
 fn main() {
     let args = Args::parse();
