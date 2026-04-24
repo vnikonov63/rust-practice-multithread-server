@@ -11,7 +11,7 @@ pub fn handle_std_connection(mut stream: TcpStream) {
         .take_while(|line| !line.is_empty())
         .collect();
 
-    println!("{:#?}", http_request);
+    // println!("{:#?}", http_request);
 
     let request_line = &http_request[0];
 

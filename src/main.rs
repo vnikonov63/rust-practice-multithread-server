@@ -4,7 +4,7 @@ use _21_multi_thread_server::thread_pool::ThreadPool;
 use handlers::{
     std_connections::handle_std_connection, tokio_connections::handle_tokio_connection,
 };
-use std::{io::prelude::*, net::TcpListener, thread, time::Duration};
+use std::{net::TcpListener, thread};
 
 use clap::{Parser, Subcommand};
 use tokio::runtime;

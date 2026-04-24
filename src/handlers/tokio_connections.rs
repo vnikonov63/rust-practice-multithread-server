@@ -19,7 +19,7 @@ pub async fn handle_tokio_connection(mut stream: TcpStream) {
         http_request.push(line);
     }
 
-    println!("{:#?}", http_request);
+    // println!("{:#?}", http_request);
 
     let request_line = &http_request[0];
 
