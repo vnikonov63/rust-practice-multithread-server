@@ -27,6 +27,8 @@ enum Command {
     },
     /// Run using single threaded tokio runtime
     SingleThreadTokio,
+    /// Run using multithreaded tokio runtime, using each CPU core available on the system.
+    MultiThreadTokio
 }
 
 fn main() {
@@ -46,7 +48,11 @@ fn main() {
                 .enable_all()
                 .build()
                 .unwrap();
-            rt.block_on(tokio_single_threaded())
+            rt.block_on(tokio());
+        }
+        Some(Command::MultiThreadTokio) => {
+            let threaded_rt = runtime::Runtime::new().unwrap();
+            threaded_rt.block_on(tokio());
         }
     }
 }
@@ -61,7 +67,7 @@ fn infinite_thread_generation(listener: TcpListener) {
     }
 }
 
-async fn tokio_single_threaded() {
+async fn tokio() {
     let listener = tokio::net::TcpListener::bind("127.0.0.1:7878")
         .await
         .unwrap();
