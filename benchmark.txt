@@ -1,0 +1,40 @@
+
+---
+spawn-infinite-threads:
+---
+Running 30s test @ http://127.0.0.1:7878
+  4 threads and 100 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.60ms    2.48ms  15.20ms   92.45%
+    Req/Sec   422.69    475.79     1.29k    74.51%
+  2946 requests in 30.07s, 640.04KB read
+  Socket errors: connect 0, read 2946, write 0, timeout 510
+  Non-2xx or 3xx responses: 595
+Requests/sec:     97.96
+Transfer/sec:     21.28KB
+---
+single-thread-tokio:
+---
+Running 30s test @ http://127.0.0.1:7878
+  4 threads and 100 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.71ms    2.53ms  16.12ms   93.34%
+    Req/Sec   449.36    495.83     1.33k    72.34%
+  2999 requests in 30.08s, 651.61KB read
+  Socket errors: connect 0, read 2999, write 0, timeout 507
+  Non-2xx or 3xx responses: 607
+Requests/sec:     99.71
+Transfer/sec:     21.66KB
+---
+multi-thread-tokio:
+---
+Running 30s test @ http://127.0.0.1:7878
+  4 threads and 100 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.96ms    2.77ms  17.39ms   93.87%
+    Req/Sec   428.79    479.41     1.22k    70.21%
+  2950 requests in 30.07s, 641.25KB read
+  Socket errors: connect 0, read 2950, write 0, timeout 504
+  Non-2xx or 3xx responses: 605
+Requests/sec:     98.09
+Transfer/sec:     21.32KB
