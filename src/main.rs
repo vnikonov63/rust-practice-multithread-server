@@ -18,33 +18,35 @@ struct Args {
 
 #[derive(Subcommand, Debug)]
 enum Command {
-    /// Spawn unbounded threads (default behavior)
+    /// Run spawning unbounded threads (default behavior)
     SpawnInfiniteThreads,
     /// Run using a fixed-size thread pool
     ThreadPool {
         /// Number of threads in the pool
         size: usize,
     },
-    Tokio,
+    /// Run using single threaded tokio runtime
+    SingleThreadTokio,
 }
 
 fn main() {
     let args = Args::parse();
 
-    let listener = TcpListener::bind("127.0.0.1:7878").unwrap();
-
     match args.command {
         Some(Command::SpawnInfiniteThreads) | None => {
+            let listener = TcpListener::bind("127.0.0.1:7878").unwrap();
             infinite_thread_generation(listener);
         }
         Some(Command::ThreadPool { size }) => {
+            let listener = TcpListener::bind("127.0.0.1:7878").unwrap();
             thread_pool(listener, size);
         }
-        Some(Command::Tokio) => {
-            let mut rt = runtime::Runtime::new().unwrap();
-            rt.block_on(async {
-                println!("hello to the use from tokio runtume");
-            })
+        Some(Command::SingleThreadTokio) => {
+            let rt = runtime::Builder::new_current_thread()
+                .enable_all()
+                .build()
+                .unwrap();
+            rt.block_on(tokio_single_threaded())
         }
     }
 }
@@ -54,8 +56,18 @@ fn infinite_thread_generation(listener: TcpListener) {
         let stream = stream.unwrap();
 
         let _ = thread::spawn(|| {
-            handle_connection(stream);
+            handle_std_connection(stream);
         });
+    }
+}
+
+async fn tokio_single_threaded() {
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:7878")
+        .await
+        .unwrap();
+    loop {
+        let (mut stream, _) = listener.accept().await.unwrap();
+        tokio::spawn(handle_tokio_connection(stream));
     }
 }
 
@@ -65,12 +77,12 @@ fn thread_pool(listener: TcpListener, pool_size: usize) {
     for stream in listener.incoming() {
         let stream = stream.unwrap();
         pool.execute(|| {
-            handle_connection(stream);
+            handle_std_connection(stream);
         })
     }
 }
 
-fn handle_connection(mut stream: TcpStream) {
+fn handle_std_connection(mut stream: TcpStream) {
     let buf_reader = BufReader::new(&stream);
     let http_request: Vec<_> = buf_reader
         .lines()
@@ -86,7 +98,7 @@ fn handle_connection(mut stream: TcpStream) {
         "GET / HTTP/1.1" => ("HTTP/1.1 200 OK", "static-html/hello.html"),
         "GET /sleep HTTP/1.1" => {
             thread::sleep(Duration::from_secs(5));
-            ("HTTP/1.1 200 OK", "hello.html")
+            ("HTTP/1.1 200 OK", "static-html/hello.html")
         }
         _ => ("HTTP/1.1 404 NOT FOUND", "static-html/404.html"),
     };
@@ -96,4 +108,38 @@ fn handle_connection(mut stream: TcpStream) {
 
     let response = format!("{status_line}\r\nContent-Length: {length}\r\n\r\n{contents}");
     stream.write_all(response.as_bytes()).unwrap();
+}
+
+async fn handle_tokio_connection(mut stream: tokio::net::TcpStream) {
+    use tokio::io::{AsyncBufReadExt, AsyncWriteExt};
+    let buf_reader = tokio::io::BufReader::new(&mut stream);
+    let mut lines = buf_reader.lines();
+    let mut http_request = Vec::new();
+
+    while let Some(line) = lines.next_line().await.unwrap() {
+        if line.is_empty() {
+            break;
+        }
+
+        http_request.push(line);
+    }
+
+    println!("{:#?}", http_request);
+
+    let request_line = &http_request[0];
+
+    let (status_line, filename) = match &request_line[..] {
+        "GET / HTTP/1.1" => ("HTTP/1.1 200 OK", "static-html/hello.html"),
+        "GET /sleep HTTP/1.1" => {
+            tokio::time::sleep(Duration::from_secs(5)).await;
+            ("HTTP/1.1 200 OK", "static-html/hello.html")
+        }
+        _ => ("HTTP/1.1 404 NOT FOUND", "static-html/404.html"),
+    };
+
+    let contents = tokio::fs::read_to_string(filename).await.unwrap();
+    let length = contents.len();
+
+    let response = format!("{status_line}\r\nContent-Length: {length}\r\n\r\n{contents}");
+    stream.write_all(response.as_bytes()).await.unwrap();
 }
