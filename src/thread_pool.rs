@@ -66,7 +66,6 @@ struct Worker {
 
 impl Worker {
     pub fn new(id: usize, reciever: Arc<Mutex<mpsc::Receiver<Job>>>) -> Worker {
-        // TODO: this may panic in production, thread::Builder should be used
         let thread = thread::spawn(move || {
             loop {
                 let message = reciever.lock().unwrap().recv();

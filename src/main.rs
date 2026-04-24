@@ -1,3 +1,5 @@
+use _21_multi_thread_server::thread_pool::ThreadPool;
+use clap::{Parser, Subcommand};
 use std::{
     fs,
     io::{BufReader, prelude::*},
@@ -5,9 +7,7 @@ use std::{
     thread,
     time::Duration,
 };
-
-use clap::{Parser, Subcommand};
-use _21_multi_thread_server::thread_pool::ThreadPool;
+use tokio::runtime;
 
 #[derive(Parser, Debug)]
 #[command(version, about)]
@@ -22,10 +22,10 @@ enum Command {
     SpawnInfiniteThreads,
     /// Run using a fixed-size thread pool
     ThreadPool {
-        // TODO: learn how to limit the size argument here, it should be larger than 50
         /// Number of threads in the pool
         size: usize,
     },
+    Tokio,
 }
 
 fn main() {
@@ -40,6 +40,12 @@ fn main() {
         Some(Command::ThreadPool { size }) => {
             thread_pool(listener, size);
         }
+        Some(Command::Tokio) => {
+            let mut rt = runtime::Runtime::new().unwrap();
+            rt.block_on(async {
+                println!("hello to the use from tokio runtume");
+            })
+        }
     }
 }
 
@@ -53,16 +59,15 @@ fn infinite_thread_generation(listener: TcpListener) {
     }
 }
 
-
 fn thread_pool(listener: TcpListener, pool_size: usize) {
-        let pool = ThreadPool::new(pool_size);
+    let pool = ThreadPool::new(pool_size);
 
-        for stream in listener.incoming().take(2) {
-            let stream = stream.unwrap();
-            pool.execute(|| {
-                handle_connection(stream);
-            })
-        }
+    for stream in listener.incoming() {
+        let stream = stream.unwrap();
+        pool.execute(|| {
+            handle_connection(stream);
+        })
+    }
 }
 
 fn handle_connection(mut stream: TcpStream) {
@@ -78,12 +83,12 @@ fn handle_connection(mut stream: TcpStream) {
     let request_line = &http_request[0];
 
     let (status_line, filename) = match &request_line[..] {
-        "GET / HTTP/1.1" => ("HTTP/1.1 200 OK", "hello.html"),
+        "GET / HTTP/1.1" => ("HTTP/1.1 200 OK", "static-html/hello.html"),
         "GET /sleep HTTP/1.1" => {
             thread::sleep(Duration::from_secs(5));
             ("HTTP/1.1 200 OK", "hello.html")
         }
-        _ => ("HTTP/1.1 404 NOT FOUND", "404.html"),
+        _ => ("HTTP/1.1 404 NOT FOUND", "static-html/404.html"),
     };
 
     let contents = fs::read_to_string(filename).unwrap();
@@ -92,5 +97,3 @@ fn handle_connection(mut stream: TcpStream) {
     let response = format!("{status_line}\r\nContent-Length: {length}\r\n\r\n{contents}");
     stream.write_all(response.as_bytes()).unwrap();
 }
-
-// TODO: add proper error handling with anyhow
