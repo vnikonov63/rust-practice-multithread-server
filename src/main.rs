@@ -61,7 +61,9 @@ fn infinite_thread_generation(listener: TcpListener) -> std::io::Result<()> {
         let stream = stream?;
 
         let _ = thread::spawn(move || {
-            handle_std_connection(stream);
+            if let Err(err) = handle_std_connection(stream) {
+                eprintln!("Failed to handle std connection: {err}");
+            }
         });
     }
 
@@ -78,13 +80,15 @@ async fn tokio() -> std::io::Result<()> {
 }
 
 fn thread_pool(listener: TcpListener, pool_size: usize) -> std::io::Result<()> {
-    let pool = ThreadPool::new(pool_size);
+    let pool = ThreadPool::new(pool_size)?;
 
     for stream in listener.incoming() {
         let stream = stream?;
         pool.execute(|| {
-            handle_std_connection(stream);
-        })
+            if let Err(err) = handle_std_connection(stream) {
+                eprintln!("Failed to handle std connection: {err}");
+            }
+        })?;
     }
     Ok(())
 }

@@ -3,15 +3,16 @@ use std::net::TcpStream;
 use std::time::Duration;
 use std::{fs, thread};
 
-pub fn handle_std_connection(mut stream: TcpStream) {
+pub fn handle_std_connection(mut stream: TcpStream) -> std::io::Result<()>{
     let buf_reader = BufReader::new(&stream);
-    let http_request: Vec<_> = buf_reader
-        .lines()
-        .map(|result| result.unwrap())
-        .take_while(|line| !line.is_empty())
-        .collect();
-
-    // println!("{:#?}", http_request);
+    let mut http_request = Vec::new();
+    for line in buf_reader.lines() {
+        let line = line?;
+        if line.is_empty() {
+            break;
+        }
+        http_request.push(line);
+    }
 
     let request_line = &http_request[0];
 
@@ -24,9 +25,11 @@ pub fn handle_std_connection(mut stream: TcpStream) {
         _ => ("HTTP/1.1 404 NOT FOUND", "static-html/404.html"),
     };
 
-    let contents = fs::read_to_string(filename).unwrap();
+    let contents = fs::read_to_string(filename)?;
     let length = contents.len();
 
     let response = format!("{status_line}\r\nContent-Length: {length}\r\n\r\n{contents}");
-    stream.write_all(response.as_bytes()).unwrap();
+    stream.write_all(response.as_bytes())?;
+
+    Ok(())
 }
