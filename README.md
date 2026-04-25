@@ -25,20 +25,20 @@
 * [ ] Add proper error handling with [`anyhow`](https://docs.rs/anyhow/latest/anyhow/)
 * [x] Remove `unwrap` from the project.
 - [x] Do not use `thread::spawn` as it may `panic!()`, instead use `thread::Builder`.
-* Create a separate option to deal with server requests using:
-  - [ ] [`Fork-join model`](https://en.wikipedia.org/wiki/Fork%E2%80%93join_model).
-    * Async I/O model with [`tokio`](https://crates.io/crates/tokio).
-      - [x] Multi-threaded.
-      - [x] Single-threaded. This could be done using `#[tokio::main(flavor = "current_thread")]`.
-    - [ ] Low-level event-driven I/O and [`mio`](https://github.com/tokio-rs/mio).
-- [ ] Brighten up the server, having more different routes.
-- [ ] Add proper server logs, that persist for the user.
-- [ ] Understand how can I write tests for this application
-* Understand how can I measure the performance of each of the options to run the server with.
-  - [x] Use `wrk` to simulate `HTTP/1.1` requests. 
-  - [x] Use `.lua` scripts to simulate calls to all 3 endpoints the server has in somewhat mixed fashion.
-  - [x] Write a script to automate starting up the server, running the `wrk` load, shutting down the server for different server options and storing the result in `./benchmarks` 
-  - [ ] Graph to visualize results. 
+* [ ] Create a separate option to deal with server requests using:
+    * [ ] [`Fork-join model`](https://en.wikipedia.org/wiki/Fork%E2%80%93join_model).
+    * [x] Async I/O model with [`tokio`](https://crates.io/crates/tokio).
+        * [x] Multi-threaded.
+        * [x] Single-threaded. This could be done using `#[tokio::main(flavor = "current_thread")]`.
+    * [ ] Low-level event-driven I/O and [`mio`](https://github.com/tokio-rs/mio).
+* [ ] Brighten up the server, having more different routes.
+* [ ] Add proper server logs, that persist for the user.
+* [ ] Understand how can I write tests for this application
+* [ ] Understand how can I measure the performance of each of the options to run the server with.
+  * [x] Use `wrk` to simulate `HTTP/1.1` requests. 
+  * [x] Use `.lua` scripts to simulate calls to all 3 endpoints the server has in somewhat mixed fashion.
+  * [x] Write a script to automate starting up the server, running the `wrk` load, shutting down the server for different server options and storing the result in `./benchmarks` 
+  * [ ] Graph to visualize results. 
 
 ## Learning takeaways
 
